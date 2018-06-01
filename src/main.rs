@@ -55,10 +55,18 @@ impl Middleware for ConfigMiddleware {
 
 impl std::panic::RefUnwindSafe for ConfigMiddleware {}
 
-fn handler(mut state: State) -> Box<HandlerFuture> {
+fn handler_get(state: State) -> Box<HandlerFuture> {
+    handler(state, "get")
+}
+
+fn handler_post(state: State) -> Box<HandlerFuture> {
+    handler(state, "post")
+}
+
+fn handler(mut state: State, method: &'static str) -> Box<HandlerFuture> {
     let f = Body::take_from(&mut state)
         .concat2()
-        .then(|full_body| match full_body {
+        .then(move |full_body| match full_body {
             Ok(valid_body) => {
                 let content = {
                     let body_content = String::from_utf8(valid_body.to_vec()).unwrap();
@@ -76,6 +84,7 @@ fn handler(mut state: State) -> Box<HandlerFuture> {
                         },
                         "body": body_content,
                         "headers": map,
+                        "method": method.clone(),
                     });
                     println!("{:?}", v);
 
@@ -120,10 +129,10 @@ fn router(uri: &str) -> Result<Router, Box<Error>> {
     );
 
     Ok(build_router(chain, pipelines, |route| {
-        route.get("/").to(handler);
-        route.get("*").to(handler);
-        route.post("/").to(handler);
-        route.post("*").to(handler);
+        route.get("/").to(handler_get);
+        route.get("*").to(handler_get);
+        route.post("/").to(handler_post);
+        route.post("*").to(handler_post);
     }))
 }
 
