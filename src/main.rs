@@ -97,6 +97,18 @@ fn handler_post(state: State) -> Box<HandlerFuture> {
     handler(state, "post")
 }
 
+fn handler_put(state: State) -> Box<HandlerFuture> {
+    handler(state, "put")
+}
+
+fn handler_patch(state: State) -> Box<HandlerFuture> {
+    handler(state, "patch")
+}
+
+fn handler_delete(state: State) -> Box<HandlerFuture> {
+    handler(state, "delete")
+}
+
 fn handler(mut state: State, method: &'static str) -> Box<HandlerFuture> {
     let f = Body::take_from(&mut state)
         .concat2()
@@ -159,6 +171,12 @@ fn router(uri: &str, path: &str) -> Result<Router, Box<Error>> {
         route.get("*").to(handler_get);
         route.post("/").to(handler_post);
         route.post("*").to(handler_post);
+        route.put("/").to(handler_put);
+        route.put("*").to(handler_put);
+        route.patch("/").to(handler_patch);
+        route.patch("*").to(handler_patch);
+        route.delete("/").to(handler_delete);
+        route.delete("*").to(handler_delete);
     }))
 }
 
