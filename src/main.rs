@@ -162,7 +162,6 @@ fn router(uri: &str, path: &str) -> Result<Router, Box<Error>> {
     }))
 }
 
-// cargo run -- redis://localhost:6379/0 samples/helloworld/index.lua
 pub fn main() {    
     let args: Vec<String> = env::args().collect();
     let addr = "127.0.0.1:7878";
