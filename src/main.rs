@@ -109,6 +109,35 @@ fn handler_delete(state: State) -> Box<HandlerFuture> {
     handler(state, "delete")
 }
 
+fn make_json(uri: &Uri, body_content: &str, map: &HashMap<&str, String>, method: &'static str) -> serde_json::Value {
+    let mut query_map: HashMap<&str, Vec<&str>> = HashMap::new();
+    if let Some(query) = uri.query() {
+        for pair in query.split("&") {
+            let kv: Vec<_> = pair.split("=").collect();
+            let value = if kv.len() == 1 {
+                ""
+            } else {
+                kv[1]
+            };
+            let mut list = match query_map.get(&kv[0]) {
+                Some(list) => list.clone(),
+                None => vec![],
+            };
+            list.push(value);
+            query_map.insert(kv[0], list);
+        }
+    }
+    json!({
+        "uri": {
+            "path": uri.path(),
+            "query": query_map,
+        },
+        "body": body_content,
+        "headers": map,
+        "method": method,
+    })
+}
+
 fn handler(mut state: State, method: &'static str) -> Box<HandlerFuture> {
     let f = Body::take_from(&mut state)
         .concat2()
@@ -123,15 +152,8 @@ fn handler(mut state: State, method: &'static str) -> Box<HandlerFuture> {
                     for it in headers.iter() {
                         map.insert(it.name(), it.value_string());
                     }
-                    let v = json!({
-                        "uri": {
-                            "path": uri.path(),
-                            "query": uri.query(),
-                        },
-                        "body": body_content,
-                        "headers": map,
-                        "method": method,
-                    });
+                    let v = make_json(&uri, &body_content, &map, method);
+                    println!("{:?}", v);
                     let res: String = data.script.arg(v.to_string()).invoke(data.conn.deref()).unwrap();
                     serde_json::from_str(&res).unwrap()
                 };
